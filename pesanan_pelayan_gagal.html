@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NF Cafe - Pesanan Pelayan</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/admin.css">
+    <style>
+        .order-list {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #b0b4b5;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .order-details {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .arrow-icon {
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .delete-icon {
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .order-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-grow: 1;
+        }
+
+        .detail-button {
+            background-color: #A300BD;
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .detail-button:hover {
+            background-color: #90009E;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-container" style="display: flex; align-items: center;">
+                <img alt="NF Coffee Logo" src="gambar/logo_nf.jpeg" height="50" width="50" />
+                <div class="logo-text" style="margin-left: 10px;">
+                    <h1>NF COFFEE</h1>
+                    <p>COFFEE AND RESTO</p>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h2>PESANAN COSTUMER (PELAYAN)</h2>
+            </div>
+            <div id="order-list">
+                <!-- Daftar pesanan akan diisi oleh JavaScript -->
+            </div>
+        </div>
+    </div>
+    <script>
+    const readyOrders = JSON.parse(localStorage.getItem('readyOrders')) || [];
+    const orderList = document.getElementById('order-list');
+
+    // Log untuk memeriksa isi readyOrders
+    console.log("Ready Orders:", readyOrders);
+
+    // Mengelompokkan pesanan berdasarkan customer_name dan table_number
+    const groupedOrders = {};
+
+    readyOrders.forEach(order => {
+        const key = `${order.customer_name}-${order.table_number}`;
+        if (!groupedOrders[key]) {
+            groupedOrders[key] = [];
+        }
+        groupedOrders[key].push(order);
+    });
+
+    // Log untuk memeriksa groupedOrders
+    console.log("Grouped Orders:", groupedOrders);
+
+    // Menampilkan pesanan yang dikelompokkan
+    for (const key in groupedOrders) {
+        const orders = groupedOrders[key];
+        const firstOrder = orders[0]; // Ambil pesanan pertama untuk menampilkan nama dan meja
+        orderList.innerHTML += `
+            <div class="order-list">
+                <div class="order-container">
+                    <div>
+                        <strong>${firstOrder.customer_name}</strong> (Meja: ${firstOrder.table_number})
+                    </div>
+                    <span class="arrow-icon" onclick="toggleDetails('${key}')">
+                        <i class="fas fa-arrow-down"></i>
+                    </span>
+                </div>
+                <div class="delete-icon-container">
+                    <img src="gambar/hapus.jpeg" alt="Hapus" class="delete-icon" onclick="hapusPesanan('${key}')" style="width: 25px; height: 25px;">
+                </div>
+            </div>
+            <div class="order-details" id="details-${key}">
+                <p>Pesanan:</p>
+                <ul>
+                    ${orders.map(order => `<li>${order.order_summary}</li>`).join('')}
+                </ul>
+                <button class="detail-button" onclick="pesananTelahDiantar('${key}')">Pesanan Telah Diantar</button>
+            </div>
+        `;
+    }
+
+    if (Object.keys(groupedOrders).length === 0) {
+        orderList.innerHTML = '<p>Tidak ada pesanan siap diantar.</p>';
+    }
+
+    function toggleDetails(key) {
+        const details = document.getElementById(`details-${key}`);
+        details.style.display = (details.style.display === 'none' || details.style.display === '') ? 'block' : 'none';
+        console.log(`Toggled details for: ${key}, Current display: ${details.style.display}`);
+    }
+
+    function pesananTelahDiantar(key) {
+        const ordersToDeliver = readyOrders.filter(order => `${order.customer_name}-${order.table_number}` === key);
+        let deliveredOrders = JSON.parse(localStorage.getItem('deliveredOrders')) || [];
+
+        // Log untuk memeriksa pesanan yang akan diantar
+        console.log("Orders to Deliver:", ordersToDeliver);
+
+        // Menghapus pesanan yang telah diantar dari readyOrders
+        readyOrders = readyOrders.filter(order => !ordersToDeliver.includes(order));
+        localStorage.setItem('readyOrders', JSON.stringify(readyOrders));
+
+        // Menambahkan pesanan yang telah diantar ke deliveredOrders
+        deliveredOrders.push(...ordersToDeliver);
+        localStorage.setItem('deliveredOrders', JSON.stringify(deliveredOrders));
+
+        // Notifikasi
+        alert(`Pesanan untuk ${ordersToDeliver[0].customer_name} telah diantar!`);
+        location.reload(); // Memuat ulang halaman untuk memperbarui tampilan
+    }
+
+    function hapusPesanan(key) {
+        const ordersToDelete = readyOrders.filter(order => `${order.customer_name}-${order.table_number}` === key);
+        let existingOrders = JSON.parse(localStorage.getItem('existingOrders')) || [];
+
+        // Log untuk memeriksa pesanan yang akan dihapus
+        console.log("Orders to Delete:", ordersToDelete);
+
+        // Menghapus semua pesanan yang sesuai dengan key
+        existingOrders = existingOrders.filter(order => !ordersToDelete.includes(order));
+        localStorage.setItem('existingOrders', JSON.stringify(existingOrders)); // Menyimpan kembali ke local storage
+        location.reload(); // Memuat ulang halaman untuk memperbarui tampilan
+    }
+</script>
+</body>
+
+</html>

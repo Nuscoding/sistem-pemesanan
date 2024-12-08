@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Informasi Pelanggan</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/admin.css">
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-container">
+                <img alt="NF Coffee Logo" src="gambar/logo_nf.jpeg" height="50" width="50" />
+                <div class="logo-text">
+                    <h1>NF COFFEE</h1>
+                    <p>COFFEE AND RESTO</p>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h2>PESANAN COSTUMER (KASIR)</h2>
+            </div>
+            <div class="form-container">
+                <h1>INFORMASI COSTUMER (CAFE)</h1>
+                <div class="form-group">
+                    <label for="nama">Nama</label>
+                    <input type="text" id="nama" name="nama">
+                </div>
+
+                <div class="form-group">
+                    <label for="alamat">Nomor Meja</label>
+                    <input type="text" id="alamat" name="alamat">
+                </div>
+
+                <div class="form-group">
+                    <label for="pesanan">Pesanan</label>
+                    <textarea id="pesanan" name="pesanan"></textarea>
+                </div>
+                <div class="form-group-total">
+                    <div class="total-harga-container">
+                        <label for="total-harga">Total Harga</label>
+                        <input type="text" id="total-harga" name="total-harga">
+                    </div>
+                    <div class="status-pembayaran-container">
+                        <label for="status-pembayaran">Status Pembayaran</label>
+                        <input type="text" id="status-pembayaran" name="status-pembayaran">
+                    </div>
+                </div>
+
+                <div class="button-container">
+                    <button type="button" class="btn-konfirmasi">KONFIRMASI</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi untuk menghasilkan ID unik
+        function generateUniqueId() {
+            return 'order-' + Date.now(); // Menggunakan timestamp sebagai ID
+        }
+
+        // Fungsi untuk mengambil parameter dari URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Mengambil data pesanan dari localStorage
+        const customerName = getQueryParam('customer_name');
+        const tableNumber = getQueryParam('table_number');
+        const orderSummary = getQueryParam('order_summary');
+        const totalPrice = getQueryParam('total_price');
+        const paymentMethod = getQueryParam('payment_method');
+        const deliveryStatus = getQueryParam('delivery_status');
+
+        // Menampilkan data di form
+        document.getElementById('nama').value = customerName || '';
+        document.getElementById('alamat').value = tableNumber || '';
+        document.getElementById('pesanan').value = orderSummary || '';
+        document.getElementById('total-harga').value = totalPrice || '';
+        document.getElementById('status-pembayaran').value = '';
+
+        // Fungsi untuk konfirmasi dan menyimpan pesanan
+        document.querySelector('.btn-konfirmasi').addEventListener('click', function handler() {
+            const customerName = document.getElementById('nama').value;
+            const tableNumber = document.getElementById('alamat').value;
+            const orderSummary = document.getElementById('pesanan').value;
+
+            // Validasi input
+            if (customerName && tableNumber && orderSummary) {
+                const newOrder = {
+                    id: generateUniqueId(), // Menambahkan ID unik
+                    customer_name: customerName,
+                    table_number: tableNumber,
+                    order_summary: orderSummary,
+                    total_price: document.getElementById('total-harga').value // Jika ada total harga
+                };
+
+                // Simpan ke localStorage
+                let existingOrders = JSON.parse(localStorage.getItem('existingOrders')) || []; // Array untuk menyimpan pesanan yang sudah ada
+
+                // Cek apakah pesanan sudah ada berdasarkan customer_name dan table_number
+                const existingOrder = existingOrders.find(order => order.customer_name === customerName && order.table_number === tableNumber);
+
+                if (!existingOrder) {
+                    existingOrders.push(newOrder); // Simpan pesanan baru ke existingOrders
+                    localStorage.setItem('existingOrders', JSON.stringify(existingOrders));
+                    alert('Pesanan berhasil disimpan!');
+                } else {
+                    alert('Pesanan dengan nama pelanggan dan nomor meja ini sudah ada, tetapi tetap disimpan dengan ID baru!');
+                }
+            } else {
+                alert('Silakan lengkapi semua field!');
+            }
+
+            // Menghapus event listener setelah eksekusi
+            document.querySelector('.btn-konfirmasi').removeEventListener('click', handler);
+        });
+    </script>F
+</body>
+
+</html>

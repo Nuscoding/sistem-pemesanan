@@ -1,0 +1,1273 @@
+bagaimana menyimpan informasi pop up setelah tombol konfirmasi diklik (jika input radio adalah cafe)
+informasi ini akan diteruskan ke halaman yang dibuka tombol konfirmasi (pembayaran_cafe.php), tetapi tidak ditampilkan di antarmuka pengguna. Selanjutnya informasi ini akan disimmpan bersama dengan informasi nama dan nomor meja ketika tombol "oke" diklik pada pembayaran_cafe.php
+selanjutnya dalam penampilan di pesanan_kasir.php informasi yang muncul tetap nama dan nomor meja pada pengguna (contoh:yunus (Meja: 44, Status pengantaran: Belum dikirim)), dan saat mengklik "Detail Pesanan" (yang mengarahkan ke pesanan_cafe.php) pada order container (pesanan_kasir.php), informasi ini (informasi dari pop up menu pelanggan.php) akan diisi pada input "pesanan"(nama, qt, harga) dan input total harga(total harga)
+
+menu.js:
+// Mengambil elemen menu dan konten
+const menuItems = document.querySelectorAll(".menu-item");
+const menuContents = document.querySelectorAll(".menu-content");
+const welcomeMessage = document.getElementById("welcome-message");
+
+// Menambahkan event listener untuk setiap item menu
+menuItems.forEach((item) => {
+  item.addEventListener("mouseover", () => {
+    item.classList.add("hover");
+  });
+  item.addEventListener("mouseout", () => {
+    item.classList.remove("hover");
+  });
+  item.addEventListener("click", () => {
+    // Menghapus kelas 'active' dari semua menu item
+    menuItems.forEach((i) => i.classList.remove("active"));
+    // Menambahkan kelas 'active' pada item yang diklik
+    item.classList.add("active");
+
+    // Menyembunyikan semua konten menu
+    menuContents.forEach((content) => (content.style.display = "none"));
+
+    // Menampilkan konten yang sesuai dengan id item yang diklik
+    const id = item.id + "-content";
+    document.getElementById(id).style.display = "block";
+
+    // Mengubah pesan selamat datang sesuai dengan menu yang dipilih
+    if (welcomeMessage) {
+      welcomeMessage.innerText = `Selamat Datang di Menu ${item.innerText}`;
+    }
+
+    // Mengubah judul header sesuai menu yang dipilih
+    document.getElementById(
+      "menu-title"
+    ).innerText = ` ${item.innerText.toUpperCase()}`; // Mengubah judul header
+  });
+});
+
+// Fungsi untuk menampilkan pop-up
+
+function displayCart() {
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const cartTableBody = document.querySelector("#cart-table tbody");
+  cartTableBody.innerHTML = ""; // Kosongkan tabel sebelum diupdate
+
+  cart.forEach((item) => {
+    const newRow = cartTableBody.insertRow();
+    newRow.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.selectedOption ? item.selectedOption.toUpperCase() : "N/A"
+      }</td> <!-- Menampilkan pilihan jika ada -->
+            <td>${item.price}</td>
+            <td>${item.quantity}</td>
+        `;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Ambil menu dari localStorage
+  const menuMinuman = JSON.parse(localStorage.getItem("menuMinuman")) || [];
+  const menuMakanan = JSON.parse(localStorage.getItem("menuMakanan")) || [];
+  const menuSeafood = JSON.parse(localStorage.getItem("menuSeafood")) || [];
+  const menuSharing = JSON.parse(localStorage.getItem("menuSharing")) || [];
+  const menuSnack = JSON.parse(localStorage.getItem("menuSnack")) || [];
+
+  // Fungsi untuk menampilkan menu di kategori yang sesuai
+  function updateTable(category, menuItems) {
+    const tableBody = document.querySelector(`#${category}-content tbody`);
+    tableBody.innerHTML = ""; // Kosongkan tabel sebelum diupdate
+
+    menuItems.forEach((menu) => {
+      const newRow = tableBody.insertRow();
+      let menuHtml = "";
+
+      if (category === "minuman") {
+        // Menyimpan harga dalam variabel, jika tidak tersedia set ke 0
+        let hargaHot = (menu.hargaHot !== undefined && menu.hargaHot !== null && menu.hargaHot !== 0) ? menu.hargaHot : 0;
+        let hargaIce = (menu.hargaIce !== undefined && menu.hargaIce !== null && menu.hargaIce !== 0) ? menu.hargaIce : 0;
+
+        menuHtml = `
+                <td>
+                    ${menu.nama}<br>
+                    <span style="font-size: 10px; font-style: italic; font-weight: bold; max-height: 80px; overflow: hidden; word-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5;">
+                        Komposisi: ${menu.komposisi}
+                    </span>
+                </td>
+                <td>
+                    <div>
+                        <span style="display: block;">${hargaHot > 0 ? "Rp " + hargaHot : "Rp 0"}</span>
+                        <span style="display: block;">${hargaIce > 0 ? "Rp " + hargaIce : "Rp 0"}</span>
+                    </div>
+                </td>
+                <td>
+                    <input type="radio" name="${menu.nama.replace(/\s/g, "_")}" value="hot"> Hot<br>
+                    <input type="radio" name="${menu.nama.replace(/\s/g, "_")}" value="ice"> Ice
+                </td>
+                <td>
+                    <div class="checkbox-container">
+                        <input type="checkbox" class="custom-checkbox checkbox-tambah">
+                    </div>
+                </td>
+                <td>
+                    <div class="input-container">
+                        <i class="fas fa-minus icon-minus"></i>
+                        <input type="number" min="1" value="1" class="input-jumlah"> <!-- Input untuk jumlah -->
+                        <i class="fas fa-plus icon-plus"></i>
+                    </div>
+                </td>
+            `;
+      } else {
+        menuHtml = `
+                <td>
+                    ${menu.nama}<br>
+                    <span style="font-size: 10px; font-style: italic; font-weight: bold; max-height: 80px; overflow: hidden; word-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5;">
+                        Komposisi: ${menu.komposisi}
+                    </span>
+                </td>
+                <td>Rp ${menu.harga}</td>
+                <td>
+                    <div class="checkbox-container">
+                        <input type="checkbox" class="custom-checkbox checkbox-tambah">
+                    </div>
+                </td>
+                <td>
+                    <div class="input-container">
+                        <i class="fas fa-minus icon-minus"></i>
+                        <input type="number" min="1" value="1" class="input-jumlah"> <!-- Input untuk jumlah -->
+                        <i class="fas fa-plus icon-plus"></i>
+                    </div>
+                </td>
+            `;
+      }
+
+      newRow.innerHTML = menuHtml; // Tambahkan HTML baru ke baris tabel
+      tableBody.appendChild(newRow); // Tambahkan baris baru ke tabel
+
+      // Menambahkan event listener untuk ikon minus
+      newRow.querySelector(".icon-minus").addEventListener("click", () => {
+        const inputJumlah = newRow.querySelector(".input-jumlah");
+        let currentValue = parseInt(inputJumlah.value);
+        if (currentValue > 1) {
+          inputJumlah.value = currentValue - 1; // Kurangi nilai input
+        }
+      });
+
+      // Menambahkan event listener untuk ikon plus
+      newRow.querySelector(".icon-plus").addEventListener("click", () => {
+        const inputJumlah = newRow.querySelector(".input-jumlah");
+        let currentValue = parseInt(inputJumlah.value);
+        inputJumlah.value = currentValue + 1; // Tambahkan nilai input
+      });
+    });
+  }
+
+  // Update tabel untuk setiap kategori
+  updateTable("minuman", menuMinuman);
+  updateTable("makanan", menuMakanan);
+  updateTable("seafood", menuSeafood);
+  updateTable("sharing-menu", menuSharing);
+  updateTable("snack", menuSnack);
+});
+//pop-up
+// Menangani tombol pesan
+document.querySelectorAll(".btn-pesan").forEach((button) => {
+  button.addEventListener("click", () => {
+    // Mengambil elemen untuk ringkasan pesanan
+    const orderSummary = document.getElementById("order-summary");
+    const totalPriceElement = document.getElementById("total-price");
+    orderSummary.innerHTML = ""; // Kosongkan ringkasan pesanan sebelumnya
+    let totalPrice = 0;
+    let hasError = false; // Flag untuk mengecek apakah ada error
+
+    // Ambil semua kategori menu
+    const categories = [
+      "minuman",
+      "makanan",
+      "seafood",
+      "sharing-menu",
+      "snack",
+    ];
+
+    categories.forEach((category) => {
+      const menuItems = document.querySelectorAll(`#${category}-content tr`); // Ambil semua baris menu di kategori ini
+      menuItems.forEach((item) => {
+        const checkbox = item.querySelector(".checkbox-tambah");
+        if (checkbox && checkbox.checked) {
+          // Ambil nama menu dari sel dan pisahkan dari komposisi
+          const menuCell = item.cells[0].innerText; // Ambil isi sel pertama
+          const menuName = menuCell.split("Komposisi:")[0].trim(); // Ambil nama sebelum kata 'Komposisi'
+
+          const quantityInput = item.querySelector(".input-jumlah");
+          const quantity = parseInt(quantityInput.value); // Jumlah pesanan
+          let type = ""; // Variabel untuk menyimpan jenis pesanan
+          let itemPrice = 0; // Inisialisasi harga item
+
+          // Jika kategori minuman, ambil jenis
+          if (category === "minuman") {
+            const hotRadio = item.querySelector('input[type="radio"][value="hot"]');
+            const iceRadio = item.querySelector('input[type="radio"][value="ice"]');
+
+            // Cek apakah jenis pesanan dipilih
+            if (!hotRadio.checked && !iceRadio.checked) {
+              hasError = true;
+              const warningMessage = document.querySelector(`#${category}-content .warning-message`);
+              warningMessage.innerText = `Silakan pilih jenis minuman.`;
+              warningMessage.style.display = "block"; // Menampilkan pesan peringatan
+            } else {
+              type = hotRadio.checked ? "Hot" : "Ice"; // Menentukan jenis pesanan
+
+              // Ambil harga berdasarkan jenis yang dipilih
+              if (hotRadio.checked) {
+                itemPrice = parseFloat(item.cells[1].innerText.split("Rp ")[1].replace(".", "")); // Ambil harga Hot
+              } else if (iceRadio.checked) {
+                itemPrice = parseFloat(item.cells[1].innerText.split("Rp ")[2].replace(".", "")); // Ambil harga Ice
+              }
+
+              // Cek jika harga adalah 0
+              if (itemPrice === 0) {
+                hasError = true;
+                const warningMessage = document.querySelector(`#${category}-content .warning-message`);
+                warningMessage.innerText = `Menu tidak tersedia.`;
+                warningMessage.style.display = "block"; // Menampilkan pesan peringatan
+                return; // Keluar dari fungsi jika menu tidak tersedia
+              }
+
+              const itemTotal = itemPrice * quantity; // Hitung total berdasarkan harga yang dipilih
+              totalPrice += itemTotal; // Tambahkan ke total harga
+
+              // Menambahkan informasi ke ringkasan pesanan dengan jenis pesanan
+              orderSummary.innerHTML += `
+                <p style="font-size: smaller;">${menuName} ${type ? `(${type})` : ""} <span style="font-weight: bold; color: #8E00A3; font-size: 11px;"> QTY : ${quantity}</span> ‎ : Rp ${itemTotal}</p>
+              `;
+
+              const warningMessage = document.querySelector(`#${category}-content .warning-message`);
+              warningMessage.style.display = "none"; // Menyembunyikan pesan peringatan
+            }
+          } else {
+            // Untuk kategori lain, ambil harga langsung dari sel
+            const price = parseFloat(item.cells[1].innerText.replace("Rp ", "").replace(".", ""));
+            const itemTotal = price * quantity;
+            totalPrice += itemTotal; // Hitung total harga untuk kategori lain
+
+            // Menambahkan informasi ke ringkasan pesanan dengan jenis pesanan
+            orderSummary.innerHTML += `
+              <p style="font-size: smaller;">${menuName} ${type ? `(${type})` : ""} <span style="font-weight: bold; color: #8E00A3; font-size: 11px;"> QTY : ${quantity}</span> ‎ : Rp ${itemTotal}</p>
+            `;
+          }
+        }
+      });
+    });
+
+    if (hasError) {
+      return; // Jika ada error, tidak lanjut ke proses pemesanan
+    }
+
+    // Tampilkan total harga
+    totalPriceElement.innerHTML = `<strong>Total harga: Rp ${totalPrice}</strong>`;
+
+    // Tampilkan pop-up
+    document.getElementById("popup").style.display = "flex";
+  });
+});
+
+// Menangani tombol tutup pop-up
+document.getElementById("close-popup").addEventListener("click", () => {
+  document.getElementById("popup").style.display = "none";
+});
+
+// Menangani tombol konfirmasi
+document.getElementById("confirm-button").addEventListener("click", () => {
+  const checkboxes = document.querySelectorAll('input[name="orderType"]:checked');
+  let orderTypes = [];
+  checkboxes.forEach((checkbox) => {
+    orderTypes.push(checkbox.value);
+  });
+
+  // Cek jenis pesanan dan arahkan ke halaman yang sesuai
+  if (orderTypes.includes("cafe")) {
+    window.location.href = "pembayaran_cafe.php"; // Arahkan ke halaman pembayaran_cafe.php
+  } else if (orderTypes.includes("kurir")) {
+    window.location.href = "pembayaran_kurir.php"; // Arahkan ke halaman pembayaran_kurir.php
+  } else {
+    alert('Silakan pilih jenis pesanan.'); // Pesan jika tidak ada pilihan
+  }
+});
+
+// Menangani tombol batal
+document.getElementById("cancel-button").addEventListener("click", () => {
+  document.getElementById("popup").style.display = "none"; // Tutup pop-up
+});
+
+document.getElementById('confirm-button').addEventListener('click', function () {
+  const checkboxes = document.querySelectorAll('input[name="orderType"]:checked');
+  let orderTypes = [];
+  checkboxes.forEach((checkbox) => {
+    orderTypes.push(checkbox.value);
+  });
+
+  // Tampilkan pilihan jenis pesanan
+  alert('Jenis Pesanan Anda: ' + orderTypes.join(', '));
+  // Tutup pop-up setelah konfirmasi
+  document.getElementById('popup').style.display = 'none';
+});
+
+
+menu_pelanggan.php:
+<html>
+
+<head>
+    <title>
+        Menu pelanggan
+    </title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="//code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/menu.css">
+    <style>
+        /* CSS tambahan untuk menghilangkan garis tabel */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        /* Gaya untuk tombol pesan */
+        .btn-pesan {
+            position: fixed;
+            /* Tetap di tempat saat menggulir */
+            top: 50px;
+            /* Jarak dari bawah */
+            right: 20px;
+            /* Jarak dari kanan */
+            background-color: #A300BD;
+            /* Warna ungu solid */
+            color: white;
+            /* Warna teks putih */
+            border: none;
+            /* Menghilangkan border */
+            padding: 8px 12px;
+            /* Padding untuk tombol */
+            border-radius: 4px;
+            /* Sudut melengkung */
+            cursor: pointer;
+            /* Kursor pointer saat hover */
+            transition: background-color 0.3s;
+            /* Transisi saat hover */
+            z-index: 100;
+            /* Pastikan tombol berada di depan */
+        }
+
+        .warning-message {
+            position: fixed;
+            top: 60px;
+            /* Jarak dari bawah */
+            right: 100px;
+            color: red;
+            /* Warna teks */
+            display: none;
+            /* Tersembunyi secara default */
+            margin-right: 10px;
+            /* Jarak kanan */
+            font-style: italic;
+            /* Gaya italic */
+            font-size: 15px;
+            z-index: 100;
+            border-top: 1px solid transparent;
+            /* Border transparan untuk mencegah collapse */
+            margin-top: 10px;
+            /* Margin atas yang diinginkan */
+        }
+
+
+
+
+        .btn-pesan:hover {
+            background-color: #8E00A3;
+            /* Warna lebih gelap saat hover */
+        }
+
+        /* CSS untuk pemisah modern */
+        .separator {
+            height: 2px;
+            /* Tinggi separator */
+            background-color: #ccc;
+            /* Warna pemisah */
+            margin: 10px 0;
+            /* Jarak atas dan bawah */
+            width: 100%;
+            /* Lebar penuh */
+        }
+
+        .input-jumlah {
+            width: 40px;
+            /* Lebar input yang lebih kecil */
+            padding: 5px;
+            /* Padding di dalam input yang lebih kecil */
+            border: 2px solid #A300BD;
+            /* Border input */
+            border-radius: 4px;
+            /* Sudut melengkung */
+            outline: none;
+            /* Menghilangkan outline default */
+            transition: border-color 0.3s ease;
+            /* Transisi untuk perubahan warna border */
+            box-sizing: border-box;
+            /* Menghitung padding dan border dalam lebar total */
+            text-align: center;
+            /* Teks di tengah */
+            font-size: 14px;
+            /* Ukuran font yang lebih kecil */
+        }
+
+        .input-jumlah:focus {
+            border-color: #A300BD;
+            /* Warna border saat fokus */
+            box-shadow: 0 0 5px rgba(163, 0, 189, 0.5);
+            /* Efek bayangan saat fokus */
+        }
+
+        .input-jumlah::-webkit-inner-spin-button,
+        /* Menghilangkan spin button di Chrome */
+        .input-jumlah::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            /* Menghilangkan tampilan default */
+            margin: 0;
+            /* Menghilangkan margin */
+        }
+
+        .custom-checkbox {
+            width: 20px;
+            /* Lebar checkbox */
+            height: 20px;
+            /* Tinggi checkbox */
+            cursor: pointer;
+            /* Menunjukkan bahwa ini bisa diklik */
+            position: relative;
+            /* Agar dapat menggunakan pseudo-element */
+            appearance: none;
+            /* Menghilangkan tampilan default */
+            border: 2px solid #A300BD;
+            /* Border kotak */
+            border-radius: 4px;
+            /* Sudut melengkung */
+            outline: none;
+            /* Menghilangkan outline default */
+            margin: 0;
+            /* Menghilangkan margin default */
+            display: inline-block;
+            /* Mengatur posisi inline */
+        }
+
+        .custom-checkbox:checked {
+            background-color: #A300BD;
+            /* Warna saat dicentang */
+            border: 2px solid #A300BD;
+            /* Border saat dicentang */
+        }
+
+        .custom-checkbox:checked::after {
+            content: '';
+            /* Menambahkan konten kosong */
+            position: absolute;
+            /* Mengatur posisi absolut */
+            top: 2px;
+            /* Jarak dari atas */
+            left: 2px;
+            /* Jarak dari kiri */
+            width: 14px;
+            /* Lebar centang */
+            height: 14px;
+            /* Tinggi centang */
+            background-color: #6495ED;
+            /* Warna latar belakang centang */
+            border-radius: 2px;
+            /* Sudut melengkung untuk centang */
+        }
+
+        .checkbox-container {
+            display: flex;
+            /* Menggunakan flexbox */
+            align-items: center;
+            /* Rata tengah secara vertikal */
+            justify-content: center;
+            /* Rata tengah secara horizontal */
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            /* Vertically center the items */
+            justify-content: left;
+            /* Horizontally center the items */
+        }
+
+        .input-jumlah {
+            width: 50px;
+            /* Atur lebar sesuai kebutuhan */
+            text-align: center;
+            /* Rata tengah teks di dalam input */
+            border: 1px solid #ccc;
+            /* Border abu-abu terang */
+            border-radius: 4px;
+            /* Sudut melengkung */
+            margin: 0 10px;
+            /* Jarak antara ikon dan input */
+        }
+
+        .icon-minus,
+        .icon-plus {
+            width: 20px;
+            /* Atur lebar ikon */
+            height: 20px;
+            /* Atur tinggi ikon */
+            cursor: pointer;
+            /* Tunjukkan bahwa ikon bisa diklik */
+        }
+
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 400px;
+            /* Lebar pop-up yang lebih besar */
+        }
+
+        button {
+            background-color: #8E00A3;
+            /* Warna tombol */
+            color: white;
+            /* Warna teks putih */
+            border: none;
+            /* Menghilangkan border */
+            padding: 10px 15px;
+            /* Padding untuk tombol */
+            border-radius: 4px;
+            /* Sudut melengkung */
+            cursor: pointer;
+            /* Kursor pointer saat hover */
+            transition: background-color 0.3s;
+            /* Transisi saat hover */
+            margin: 5px;
+            /* Margin untuk tombol */
+            margin-top: 24px;
+        }
+
+        button:hover {
+            background-color: #A300BD;
+            /* Warna lebih gelap saat hover */
+        }
+
+        .button-container {
+            display: flex;
+            /* Menggunakan flexbox */
+            justify-content: space-between;
+            /* Rata kiri kanan */
+        }
+
+        .close-button {
+            cursor: pointer;
+            float: right;
+            font-size: 20px;
+        }
+
+        .order-type {
+            display: flex;
+            /* Menggunakan flexbox untuk mengatur elemen dalam satu baris */
+            align-items: center;
+            /* Menjaga agar elemen berada di tengah secara vertikal */
+        }
+
+        .order-type label {
+            margin-right: 20px;
+            /* Memberikan jarak antar label */
+        }
+
+        
+    </style>
+</head>
+<!-- Pop-up Container -->
+<div id="popup" class="popup" style="display: none;">
+    <div class="popup-content">
+        <span class="close-button" id="close-popup">&times;</span>
+        <h2>Informasi Pesanan</h2>
+        <div id="order-summary"></div>
+        <div class="total-price" id="total-price"></div>
+
+        <!-- Tambahkan pilihan jenis pesanan -->
+        <h3 class="order-title">Jenis Pesanan</h3>
+        <div class="order-type">
+            <label>
+                <input type="radio" name="orderType" value="cafe"> Cafe
+            </label>
+            <label>
+                <input type="radio" name="orderType" value="kurir"> Kurir
+            </label>
+        </div>
+
+        <div class="button-container">
+            <button id="cancel-button">Batal</button>
+            <button id="confirm-button">Konfirmasi</button>
+        </div>
+    </div>
+</div>
+
+<body>
+    <div class="container" id="main-container">
+        <div class="sidebar">
+            <div class="logo-container">
+                <img alt="NF Coffee Logo" height="50" src="gambar/logo_nf.jpeg" width="50" />
+                <div class="logo-text">
+                    <h1>
+                        NF COFFEE
+                    </h1>
+                    <p>
+                        COFFEE AND RESTO
+                    </p>
+                </div>
+            </div>
+
+            <ul class="menu-list">
+                <li class="menu-item" id="minuman">MINUMAN</li>
+                <li class="menu-item" id="makanan">MAKANAN</li>
+                <li class="menu-item" id="seafood">SEAFOOD</li>
+                <li class="menu-item" id="sharing-menu">SHARING MENU</li>
+                <li class="menu-item" id="snack">SNACK</li>
+            </ul>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <input type="text" class="search-box" placeholder="Cari menu...">
+                <h2 id="menu-title">MINUMAN</h2>
+                <i class="fas fa-user-circle profile-icon"></i>
+            </div>
+
+            <div id="minuman-content" class="menu-content" style="display: block;">
+                <div style="display: flex; justify-content: flex-end; align-items: center;">
+                    <span class="warning-message"></span> <!-- Elemen pesan peringatan -->
+                    <button class="btn-pesan">Pesan</button>
+                </div>
+                <div class="separator"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Menu</th>
+                            <th>Harga</th>
+                            <th>Jenis</th>
+                            <th>Pilih Menu</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Tambahkan baris menu lainnya di sini -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="makanan-content" class="menu-content" style="display: none;">
+                <div style="display: flex; justify-content: flex-end; align-items: center;">
+                    <span class="warning-message"></span> <!-- Elemen pesan peringatan -->
+                    <button class="btn-pesan">Pesan</button>
+                </div>
+                <div class="separator"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Menu</th>
+                            <th>Harga</th>
+                            <th>Pilih Menu</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <!-- Tambahkan baris menu makanan lainnya di sini -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="seafood-content" class="menu-content" style="display: none;">
+                <div style="display: flex; justify-content: flex-end; align-items: center;">
+                    <span class="warning-message"></span> <!-- Elemen pesan peringatan -->
+                    <button class="btn-pesan">Pesan</button>
+                </div>
+                <div class="separator"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Menu</th>
+                            <th>Harga</th>
+                            <th>Pilih Menu</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <!-- Tambahkan baris menu seafood lainnya di sini -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="sharing-menu-content" class="menu-content" style="display: none;">
+                <div style="display: flex; justify-content: flex-end; align-items: center;">
+                    <span class="warning-message"></span> <!-- Elemen pesan peringatan -->
+                    <button class="btn-pesan">Pesan</button>
+                </div>
+                <div class="separator"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Menu</th>
+                            <th>Harga</th>
+                            <th>Pilih Menu</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <!-- Tambahkan baris menu sharing lainnya di sini -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="snack-content" class="menu-content" style="display: none;">
+                <div style="display: flex; justify-content: flex-end; align-items: center;">
+                    <span class="warning-message"></span> <!-- Elemen pesan peringatan -->
+                    <button class="btn-pesan">Pesan</button>
+                </div>
+                <div class="separator"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Menu</th>
+                            <th>Harga</th>
+                            <th>Pilih Menu</th>
+                            <th>Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        <!-- Tambahkan baris menu snack lainnya di sini -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="js/menu.js"></script>
+
+
+</html>
+
+
+pemayaran_cafe.php:
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Informasi Pesanan Cafe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/pembayaran.css">
+</head>
+<style>
+    .form-group .error-message {
+        color: red;
+        font-size: 0.6em;
+        margin-top: 0.5em;
+        text-align: left;
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .form-group .error-message i {
+        margin-right: 5px;
+        font-size: 0.6em;
+    }
+
+    .popup {
+        display: none;
+        /* Sembunyikan pop-up secara default */
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        /* Latar belakang semi-transparan */
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        /* Pastikan pop-up di atas elemen lain */
+    }
+
+    .popup-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        text-align: center;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-container">
+                <img alt="NF Coffee Logo" src="gambar/logo_nf.jpeg" height="50" width="50" />
+                <div class="logo-text">
+                    <h1>NF COFFEE</h1>
+                    <p>COFFEE AND RESTO</p>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h2>INFORMASI PESANAN CAFE</h2>
+                <i class="fas fa-user-circle profile-icon"></i>
+            </div>
+            <div class="content">
+                <div class="payment-method">
+                    <h4>Pilih Metode Pembayaran</h4>
+                    <div class="icons">
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="cash" checked>
+                            <i class="fas fa-money-bill-wave"></i>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment-method" value="transfer">
+                            <i class="fas fa-credit-card"></i>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Nama</label>
+                        <input id="name" name="name" type="text" />
+                        <span class="error-message" id="name-error" style="display: none; color: red;">
+                            <i class="fas fa-exclamation-triangle"></i> Nama tidak boleh kosong.
+                        </span>
+                    </div>
+                    <div class="form-group">
+                        <label for="table-number">Nomor Meja</label>
+                        <input id="table-number" name="table-number" type="number" min="1" max="50" required />
+                        <span class="error-message" id="table-error" style="display: none; color: red;">
+                            <i class="fas fa-exclamation-triangle"></i> Nomor meja harus antara 1 dan 50.
+                        </span>
+                    </div>
+                    <button id="buat-pesanan-btn">BUAT PESANAN</button>
+                </div>
+
+                <!-- Pop-up -->
+                <div id="popup" class="popup" style="display: none;">
+                    <div class="popup-content">
+                        <p id="popup-message"></p>
+                        <div class="button-container">
+                            <button id="cancel-button">Batal</button>
+                            <button id="ok-button">OK</button>
+                            <button id="back-to-menu-button" style="display: none;">Kembali ke Menu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('table-number').addEventListener('input', function() {
+
+            const value = this.value;
+            const errorMessage = document.getElementById('table-error');
+
+            if (value < 1 || value > 50) {
+                errorMessage.style.display = 'flex';
+            } else {
+                errorMessage.style.display = 'none';
+            }
+        });
+    </script>
+
+    <script>
+        // Event listener untuk tombol "BUAT PESANAN"
+        document.getElementById('buat-pesanan-btn').addEventListener('click', function() {
+            const nameInput = document.getElementById('name');
+            const tableNumber = document.getElementById('table-number').value;
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+
+            // Validasi nama
+            if (!nameInput.value) {
+                document.getElementById('name-error').style.display = 'flex';
+                return;
+            } else {
+                document.getElementById('name-error').style.display = 'none';
+            }
+
+            // Validasi nomor meja
+            if (tableNumber < 1 || tableNumber > 50) {
+                document.getElementById('table-error').style.display = 'flex';
+                return;
+            } else {
+                document.getElementById('table-error').style.display = 'none';
+            }
+
+            // Menampilkan pop-up konfirmasi jika metode pembayaran adalah tunai
+            let popupMessage = document.getElementById('popup-message');
+            let popup = document.getElementById('popup');
+
+            if (paymentMethod === 'cash') {
+                popupMessage.textContent = `Pesanan berhasil dibuat untuk "${nameInput.value}" di meja "${tableNumber}". Silahkan melakukan pembayaran di kasir.`;
+                popup.style.display = 'flex'; // Menampilkan pop-up
+            } else if (paymentMethod === 'transfer') {
+                popupMessage.textContent = `Metode pembayaran saat ini belum tersedia.`;
+                popup.style.display = 'flex'; // Menampilkan pop-up
+            }
+        });
+
+        // Event listener untuk tombol "OK" di pop-up
+        document.getElementById('ok-button').addEventListener('click', function() {
+            const nameInput = document.getElementById('name');
+            const tableNumber = document.getElementById('table-number').value;
+            const paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+
+            // Membuat objek data pesanan
+            const orderData = {
+                customer_name: nameInput.value,
+                table_number: tableNumber,
+                payment_method: paymentMethod,
+                delivery_status: 'Belum dikirim' // Misalnya status pengantaran
+            };
+
+            // Mengambil data pesanan yang sudah ada dari Local Storage
+            let orders = JSON.parse(localStorage.getItem('orders')) || []; // Inisialisasi dengan array kosong jika tidak ada
+
+            // Menambahkan pesanan baru ke dalam array
+            orders.push(orderData);
+
+            // Menyimpan kembali ke Local Storage
+            localStorage.setItem('orders', JSON.stringify(orders));
+
+            // Menampilkan pesan umpan balik
+            document.getElementById('popup-message').textContent = "Terima kasih! Pesanan Anda telah diproses.";
+
+            // Menyembunyikan tombol OK dan Batal
+            document.getElementById('ok-button').style.display = 'none';
+            document.getElementById('cancel-button').style.display = 'none';
+
+            // Menampilkan tombol "Kembali ke Menu"
+            document.getElementById('back-to-menu-button').style.display = 'block'; // Menampilkan tombol "Kembali ke Menu"
+        });
+    </script>
+    <script>
+        // Event listener untuk tombol "Batal" di pop-up
+        document.getElementById('cancel-button').addEventListener('click', function() {
+            const popup = document.getElementById('popup');
+            popup.style.display = 'none'; // Menyembunyikan pop-up
+        });
+        document.getElementById('back-to-menu-button').addEventListener('click', function() {
+            window.location.href = 'menu_pelanggan.php'; // Mengarahkan ke menu pelanggan
+        });
+    </script>
+</body>
+
+</html>
+
+pesanan_kasir.php:
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>NF Cafe - Pesanan Kasir</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/admin.css"> <!-- Link ke CSS khusus untuk admin -->
+    <style>
+        .order-list {
+            display: none;
+            display: flex;
+            /* Sembunyikan daftar pesanan secara default */
+            align-items: center;
+            /* Memastikan bahwa mereka sejajar secara vertikal */
+            justify-content: space-between;
+            /* Center the order list */
+            margin-top: 40px;
+
+        }
+
+        .order-list.visible {
+            display: block;
+            /* Tampilkan daftar pesanan jika ada */
+        }
+
+        .order-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            /* Menyusun item dengan jarak antara */
+            margin-bottom: 0px;
+            background-color: #b0b4b5;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            /* Garis batas untuk kontainer */
+            flex-grow: 1;
+            /* Memungkinkan container customer untuk mengisi ruang yang tersisa */
+            margin-right: 20px;
+            /* Memberikan jarak 10px antara container dan ikon ceklis */
+            height: 35px;
+            /* Set the height */
+        }
+
+
+
+        .customer-name {
+            flex: 1;
+            /* Membuat nama pelanggan mengambil ruang yang tersedia */
+            flex-grow: 1;
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            color: black;
+            margin-left: 5px;
+        }
+
+        .check-icon-container {
+            display: flex;
+            /* Memastikan ikon ceklis terpusat */
+            align-items: center;
+            /* Memastikan ikon ceklis sejajar secara vertikal */
+            margin-top: 0px;
+        }
+
+
+
+        .check-icon {
+            background-color: #A300BD;
+            width: 50px;
+            height: 50px;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20%;
+            border: 2px solid #888;
+            /* Menambahkan border */
+            transition: background-color 0.3s, transform 0.2s;
+            /* Transisi untuk efek interaktif */
+        }
+
+        .check-icon:hover {
+            background-color: #90009E;
+            /* Mengubah warna latar saat kursor berada di atas */
+            cursor: pointer;
+            /* Mengubah kursor menjadi pointer saat hover */
+        }
+
+        .check-icon:active {
+            transform: scale(0.95);
+            /* Efek mengecil saat diklik */
+        }
+
+        .detail-button {
+            background-color: #A300BD;
+            /* Warna ungu */
+
+            /* Teks putih */
+            font-weight: bold;
+            /* Teks tebal */
+            border: none;
+            /* Tanpa border */
+            border-radius: 5px;
+            /* Sudut membulat */
+            padding: 5px 10px;
+            /* Padding di dalam tombol */
+            cursor: pointer;
+            /* Kursor pointer saat hover */
+            transition: background-color 0.3s;
+            /* Transisi warna latar belakang */
+        }
+
+        .detail-button:hover {
+            background-color: #90009E;
+            /* Warna lebih gelap saat hover */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-container" style="display: flex; align-items: center;">
+                <img alt="NF Coffee Logo" src="gambar/logo_nf.jpeg" height="50" width="50" />
+                <div class="logo-text" style="margin-left: 10px;">
+                    <h1>NF COFFEE</h1>
+                    <p>COFFEE AND RESTO</p>
+                </div>
+            </div>
+            <div class="separator"></div> <!-- Elemen separator -->
+            <button class="btn-kelola-menu" onclick="window.location.href='menu_kasir.php'">Kelola Menu</button>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h2>PESANAN COSTUMER (KASIR)</h2>
+                <!--<i class="fas fa-user-circle profile-icon"></i> -->
+            </div>
+            <div id="order-list" class="order-list">
+                <!-- Daftar pesanan akan diisi oleh JavaScript -->
+            </div>
+        </div>
+    </div>
+    <script>
+        // Mengambil data pesanan dari local storage
+        const orders = JSON.parse(localStorage.getItem('orders')) || []; // Ambil array pesanan atau inisialisasi dengan array kosong
+
+        const orderList = document.getElementById('order-list');
+
+        if (orders.length > 0) {
+            // Menampilkan semua pesanan
+            orders.forEach((order, index) => {
+                orderList.innerHTML += `
+    <div class="order-list">
+        <div class="order-container">
+            <div class="customer-name">
+                ${order.customer_name} (Meja: ${order.table_number}, Status pengantaran: ${order.delivery_status})
+            </div>
+            <button class="detail-button" onclick="showDetail(${index})">Detail Pesanan</button> <!-- Tombol Detail Pesanan -->
+        </div>
+        <div class="check-icon-container">
+            <div class="check-icon" onclick="hapusPesanan(${index})">
+                <img src="gambar/hapus.jpeg" alt="Hapus" style="width: 35px; height: 35px; cursor: pointer;">
+            </div>
+        </div>
+    </div>
+    `;
+            });
+            orderList.classList.add('visible'); // Menampilkan daftar pesanan
+        } else {
+            orderList.innerHTML = `
+            <div? class="order-list">
+    <div class="order-container">
+        <div class="customer-name">
+            Belum ada pesanan.
+        </div>
+    </div>
+    </div?
+`;
+        }
+
+        // Fungsi untuk menghapus pesanan
+        function hapusPesanan(index) {
+            // Mengambil data pesanan yang ada
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            // Menghapus pesanan dari array
+            orders.splice(index, 1);
+
+            // Menyimpan kembali ke Local Storage
+            localStorage.setItem('orders', JSON.stringify(orders));
+
+            // Memperbarui tampilan
+            location.reload(); // Memuat ulang halaman untuk memperbarui tampilan
+        }
+    </script>
+    <script>
+        function showDetail(index) {
+            console.log("Detail Pesanan button clicked for index:", index);
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const order = orders[index];
+
+            if (!order) {
+                console.error("No order found at index:", index);
+                return;
+            }
+
+            console.log("Order details:", order); // Log order details
+
+            // Mengarahkan ke halaman pesanan_cafe.php dengan parameter
+            window.location.href = `pesanan_cafe.php?customer_name=${encodeURIComponent(order.customer_name)}&table_number=${order.table_number}&payment_method=${encodeURIComponent(order.payment_method)}&delivery_status=${encodeURIComponent(order.delivery_status)}`;
+        }
+    </script>
+</body>
+
+</html>
+
+pesanan_cafe.php:
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Informasi Pelanggan</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/admin.css">
+</head>
+
+<body>
+    <?php
+    // Mengambil data dari URL
+    $customer_name = isset($_GET['customer_name']) ? $_GET['customer_name'] : '';
+    $table_number = isset($_GET['table_number']) ? $_GET['table_number'] : '';
+    $payment_method = isset($_GET['payment_method']) ? $_GET['payment_method'] : '';
+    $delivery_status = isset($_GET['delivery_status']) ? $_GET['delivery_status'] : '';
+    ?>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-container" style="display: flex; align-items: center;">
+                <img alt="NF Coffee Logo" src="gambar/logo_nf.jpeg" height="50" width="50" />
+                <div class="logo-text" style="margin-left: 10px;">
+                    <h1>NF COFFEE</h1>
+                    <p>COFFEE AND RESTO</p>
+                </div>
+            </div>
+            <div class="separator"></div> <!-- Elemen separator -->
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h2>PESANAN COSTUMER (KASIR)</h2>
+            </div>
+            <div class="form-container">
+                <h1>INFORMASI COSTUMER (CAFE)</h1>
+                <div class="form-group">
+                    <label for="nama">Nama</label>
+                    <input type="text" id="nama" name="nama" value="<?php echo htmlspecialchars($customer_name); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="alamat">Nomor Meja</label>
+                    <input type="text" id="alamat" name="alamat" value="<?php echo htmlspecialchars($table_number); ?>">
+                </div>
+                <div class="form-group">
+                    <label for="pesanan">Pesanan</label>
+                    <textarea id="pesanan" name="pesanan"></textarea>
+                </div>
+                <div class="form-group-total">
+                    <div class="total-harga-container">
+                        <label for="total-harga">Total Harga</label>
+                        <input type="text" id="total-harga" name="total-harga">
+                    </div>
+                    <div class="status-pembayaran-container">
+                        <label for="status-pembayaran">Status Pembayaran</label>
+                        <input type="text" id="status-pembayaran" name="status-pembayaran">
+                    </div>
+                </div>
+                <div class="button-container">
+                    <button type="button" class="btn-konfirmasi">KONFIRMASI</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
